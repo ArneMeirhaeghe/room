@@ -94,16 +94,6 @@ const material1 = new THREE.MeshBasicMaterial({
   map: bakedTexture1,
 });
 
-gltfLoader.load("models/isometric_room_exam.glb", (gltf) => {
-  gltf.scene.traverse((child) => {
-    if (child.isMesh) {
-      child.material = material1;
-    }
-  });
-
-  scene.add(gltf.scene);
-});
-
 /**
  * POI
  */
@@ -194,6 +184,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const raycaster = new THREE.Raycaster();
 
 const clock = new THREE.Clock();
+let mixer = null; // Add a variable for the mixer
+
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
@@ -227,11 +219,40 @@ const tick = () => {
     }
   }
 
+  // Update the mixer for animations
+  if (mixer) {
+    mixer.update(clock.getDelta());
+  }
+
   // Render
   renderer.render(scene, camera);
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
 };
+
+gltfLoader.load("models/isometric_room_exam.glb", (gltf) => {
+  gltf.scene.traverse((child) => {
+    if (child.isMesh) {
+      child.material = material1;
+    }
+  });
+
+  scene.add(gltf.scene);
+
+  // Log if animations are found
+  if (gltf.animations && gltf.animations.length > 0) {
+    console.log(gltf.animations.length);
+    console.log("Animations found in the model");
+
+    // Create the mixer and play the animations
+    mixer = new THREE.AnimationMixer(gltf.scene);
+    gltf.animations.forEach((clip) => {
+      mixer.clipAction(clip).play();
+    });
+  } else {
+    console.log("No animations found in the model");
+  }
+});
 
 tick();
