@@ -231,7 +231,7 @@ const tick = () => {
   window.requestAnimationFrame(tick);
 };
 
-gltfLoader.load("models/isometric_room_exam.glb", (gltf) => {
+gltfLoader.load("models/isometric_room_exam (1).glb", (gltf) => {
   gltf.scene.traverse((child) => {
     if (child.isMesh) {
       child.material = material1;
