@@ -16,7 +16,7 @@ const gui = new GUI({
 gui.close();
 gui.hide();
 
-if ((window, location.hash === "#debug")) {
+if (window.location.hash === "#debug") {
   gui.show();
 }
 
@@ -30,7 +30,6 @@ let sceneReady = false;
 const loadingManager = new THREE.LoadingManager(
   // Loaded
   () => {
-    // ...
     window.setTimeout(() => {
       loadingBarBackground.classList.add("ended");
       loadingBarBackground.style.transform = "";
@@ -53,8 +52,6 @@ const loadingManager = new THREE.LoadingManager(
     loadingBarElement.style.transform = `scaleX(${progressRatio})`;
     percentage.innerText = (progressRatio * 100).toFixed(0) + " %";
   }
-
-  // ...
 );
 
 // Canvas
@@ -80,16 +77,13 @@ gltfLoader.setDRACOLoader(dracoLoader);
 /**
  * Textures
  */
-const bakedTexture1 = textureLoader.load("textures/baked.jpg");
+const bakedTexture1 = textureLoader.load("textures/baketTry.png");
 bakedTexture1.flipY = false;
 bakedTexture1.colorSpace = THREE.SRGBColorSpace;
 
 /**
  * Materials
  */
-
-//Baked Material
-
 const material1 = new THREE.MeshBasicMaterial({
   map: bakedTexture1,
 });
@@ -97,7 +91,6 @@ const material1 = new THREE.MeshBasicMaterial({
 /**
  * POI
  */
-
 const points = [
   {
     position: new THREE.Vector3(-1, 2, -1),
@@ -136,15 +129,12 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
@@ -163,6 +153,13 @@ camera.position.x = 15;
 camera.position.y = 10;
 camera.position.z = 15;
 scene.add(camera);
+
+// Adding camera controls to the debug panel
+const cameraFolder = gui.addFolder("Camera");
+cameraFolder.add(camera.position, "x", -50, 50).name("Camera X");
+cameraFolder.add(camera.position, "y", -50, 50).name("Camera Y");
+cameraFolder.add(camera.position, "z", -50, 50).name("Camera Z");
+cameraFolder.open();
 
 // Controls
 const controls = new OrbitControls(camera, canvas);
@@ -185,6 +182,8 @@ const raycaster = new THREE.Raycaster();
 
 const clock = new THREE.Clock();
 let mixer = null; // Add a variable for the mixer
+let actions = {}; // Object to store animation actions
+debugObject.playbackSpeed = 1; // Add a variable for playback speed
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
@@ -221,7 +220,7 @@ const tick = () => {
 
   // Update the mixer for animations
   if (mixer) {
-    mixer.update(clock.getDelta());
+    mixer.update(clock.getDelta() * debugObject.playbackSpeed);
   }
 
   // Render
@@ -231,7 +230,7 @@ const tick = () => {
   window.requestAnimationFrame(tick);
 };
 
-gltfLoader.load("models/isometric_room_exam (1).glb", (gltf) => {
+gltfLoader.load("models/isometric_room_examtry.glb", (gltf) => {
   gltf.scene.traverse((child) => {
     if (child.isMesh) {
       child.material = material1;
@@ -245,11 +244,36 @@ gltfLoader.load("models/isometric_room_exam (1).glb", (gltf) => {
     console.log(gltf.animations.length);
     console.log("Animations found in the model");
 
-    // Create the mixer and play the animations
+    // Create the mixer and store the animation actions
     mixer = new THREE.AnimationMixer(gltf.scene);
     gltf.animations.forEach((clip) => {
-      mixer.clipAction(clip).play();
+      const action = mixer.clipAction(clip);
+      actions[clip.name] = action;
+      action.play();
     });
+
+    // Add controls for animations to the debug panel
+    const animationFolder = gui.addFolder("Animations");
+    animationFolder
+      .add(debugObject, "playbackSpeed", 0.1, 2)
+      .name("Playback Speed");
+    Object.keys(actions).forEach((name) => {
+      const action = actions[name];
+      console.log(name);
+      if (name == "Cylinder.009Action") {
+        name = "dartbord";
+      } else if (name == "Cylinder.018Action") {
+        name = "omer";
+      } else if (name == "Cube.003Action") {
+        name = "barstoel";
+      }
+      const actionFolder = animationFolder.addFolder(name);
+      actionFolder.add({ play: () => action.play() }, "play").name("Play");
+      actionFolder.add({ stop: () => action.stop() }, "stop").name("Stop");
+      actionFolder.add({ reset: () => action.reset() }, "reset").name("Reset");
+      actionFolder.open();
+    });
+    animationFolder.open();
   } else {
     console.log("No animations found in the model");
   }
